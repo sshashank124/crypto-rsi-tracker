@@ -16,10 +16,25 @@ client = Client(API_KEY, API_SECRET)
 
 # against ETH
 SYMBOLS = ('ADA', 'ADX', 'BAT', 'BCC', 'DASH', 'EOS', 'IOTA',
-        'LTC', 'NEO', 'OMG', 'STORJ', 'XLM', 'XRP', 'XVG', 'ZEC')
+        'LTC', 'NEO', 'OMG', 'STORJ', 'XLM', 'NANO', 'XRP', 'XVG', 'ZEC')
 RSI_N = 14
 RSI_THRESHOLD = 8
 RUN_INTERVAL_MINS = 30
+
+def send_email(rsi_values):
+    if len(rsi_values) > 0:
+
+        message = '\n'.join('{0:>8} {1:.2f}'.format(symbol, rsi) for (symbol, rsi) in rsi_values)
+        email_text = 'From: {0}\nTo: {1}\nSubject: Stock Recommendations\n\n{2}'.format(user, user, message)
+        try:
+            server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+            server.ehlo()
+            server.login(user, passwd)
+            server.sendmail(user, user, email_text)
+            server.close()
+        except:
+            pass
+
 
 while True:
     rsi_values = []
@@ -37,20 +52,9 @@ while True:
         
         rsi_values.append((SYMBOL, rsi))
 
+    print('\n'.join('{0:>8} {1:.2f}'.format(symbol, rsi) for (symbol, rsi) in rsi_values))
     rsi_values = list(filter(lambda x: x[1] < RSI_THRESHOLD, rsi_values))
 
-    if len(rsi_values) > 0:
-
-        message = '\n'.join('{0:>8} {1:.2f}'.format(symbol, rsi) for (symbol, rsi) in rsi_values)
-        email_text = 'From: {0}\nTo: {1}\nSubject: Stock Recommendations\n\n{2}'.format(user, user, message)
-
-        try:
-            server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-            server.ehlo()
-            server.login(user, passwd)
-            server.sendmail(user, user, email_text)
-            server.close()
-        except:
-            pass
+    send_email(rsi_values)
 
     time.sleep(60 * RUN_INTERVAL_MINS)
